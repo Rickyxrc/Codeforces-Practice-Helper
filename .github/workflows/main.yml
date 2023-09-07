@@ -1,11 +1,13 @@
 # copy on https://github.com/immccn123/Yangcong-tools/blob/main/.github/workflows/ci.yml
 
 name: Build
-on: 
+on:
   push:
-    paths:
-      - '**.py'
+    branches:
+      - main
   pull_request:
+    branches:
+      - main
 
 jobs:
   Windows-Build:
