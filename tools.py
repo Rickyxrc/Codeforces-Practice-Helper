@@ -7,7 +7,7 @@ parser = argparse.ArgumentParser(description="Codeforces Practice Helper - by " 
 
 parser.add_argument("--handle",help="specify user's handle",required=True,type=str)
 parser.add_argument("--fetch-problem",help="manually fetch the problem",required=False,action='store_true')
-parser.add_argument("--count-min",help="specify the minium problem tried to calculate rating",required=False,type=str,default=50)
+parser.add_argument("--count-min",help="specify the minium problem tried to calculate rating",required=False,type=int,default=50)
 parser.add_argument("--ignore-labels",help="specify the ignored labels",required=False,type=list,default=[
     "meet-in-the-middle",
     "chinese remainder theorem",
@@ -17,7 +17,7 @@ parser.add_argument("--ignore-labels",help="specify the ignored labels",required
     "schedules"
 ])
 parser.add_argument("--max-rating-delta",help="specify the maximum rating delta for one submission",required=False,type=float,default=200)
-parser.add_argument("--initial-rating",help="specify the initial rating",required=False,type=str,default=300)
+parser.add_argument("--initial-rating",help="specify the initial rating",required=False,type=int,default=300)
 parser.add_argument("--max-wrong-attempt",help="specify fetch the max wrong attempt",required=False,type=int,default=5)
 
 group = parser.add_mutually_exclusive_group(required=True)
