@@ -3,14 +3,22 @@ Codeforces Practice Helper - rickyxrc
 MIT licenced
 """
 
+import os
 import json
 import math
 import datetime
 import argparse
 import requests
-from colorama import Fore,Style
+from colorama import Fore,Style,just_fix_windows_console
+
+just_fix_windows_console()
 
 # parse argument
+
+try:
+    os.mkdir("_users")
+except FileExistsError:
+    pass
 
 parser = argparse.ArgumentParser(description=
                                  f"Codeforces Practice Helper -\
@@ -129,7 +137,7 @@ def display(rating:float)->str:
 def get_col_from_rating(rating:float) -> str:
     """显示 rating 颜色"""
     if rating < 1200:
-        return Fore.BLACK
+        return Fore.LIGHTBLACK_EX
     if rating < 1400:
         return Fore.GREEN
     if rating < 1600:
@@ -140,7 +148,7 @@ def get_col_from_rating(rating:float) -> str:
         return Fore.MAGENTA
     if rating < 2400:
         return Fore.YELLOW
-    return Fore.RED
+    return Fore.LIGHTRED_EX
 
 def fetch_problem():
     """从 Codeforces 拉取处理题目信息"""
@@ -327,8 +335,8 @@ if not arg.fetch:
         with open(profile_json,"r",encoding="utf-8") as read_stream:
             dat = json.loads(read_stream.read())
     except FileNotFoundError:
-        print('{Fore.YELLOW}user profile not found,fetching automatically.\n'
-              + 'You might run manually use --fetch few days later.{Style.RESET_ALL}')
+        print(f'{Fore.YELLOW}user profile not found,fetching automatically.\n'
+              + f'You might run manually use --fetch few days later.{Style.RESET_ALL}')
         fetch_profile(arg.handle)
         with open(profile_json,"r",encoding="utf-8") as read_stream:
             dat = json.loads(read_stream.read())
@@ -390,13 +398,11 @@ def show_recent_status(limit:int=None):
         control = ''
         if prob['beat']:
             res = 'Accepted'
-        else:
-            res = 'Unaccepted'
-        clear = Style.RESET_ALL
-        if prob['beat']:
             control = Fore.GREEN
         else:
+            res = 'Unaccepted'
             control = Fore.RED
+        clear = Style.RESET_ALL
 
         try:
             col = get_col_from_rating(problems[prob["problemId"]]["rating"])

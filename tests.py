@@ -1,7 +1,7 @@
 import pytest,os
 
 def dump(content):
-    with open("tmp","w",encoding="utf-8") as write_stream:
+    with open("local.dump","w",encoding="utf-8") as write_stream:
         write_stream.write(repr(content))
 
 class TestCodeforcesPractice:
@@ -13,7 +13,7 @@ class TestCodeforcesPractice:
         assert True
     def test_rating_calculate(arg):
         with open("_users/profile_test_user_only_generated.json","w",encoding="utf-8") as write_stream:
-            write_stream.write('{"username":"test_user_only","contest_history":[{"problemId":"1A","beat":false,"time":0},{"problemId":"1A","beat":true,"time":1}]}')
+            write_stream.write('{"username":"test_user_only","contest_history":[{"problemId":"1A","beat":false,"time":1000000000},{"problemId":"1A","beat":true,"time":1000000002}]}')
         s = os.popen('python ./tools.py --handle test_user_only --show').read()
         assert('496.5' in s)
         assert('Welcome' in s)
@@ -33,7 +33,7 @@ class TestCodeforcesPractice:
     def test_recent(arg):
         s = os.popen('python ./tools.py --handle test_user_only --recent 1').read()
         assert('Welcome' in s)
-        assert('1970-01-01, 08:00:00' in s)
+        assert('2001-09-09, 09:46:40' in s)
         assert('Unaccepted' in s)
         s = os.popen('python ./tools.py --handle test_user_only --recent 2').read()
         assert('Accepted' in s)
