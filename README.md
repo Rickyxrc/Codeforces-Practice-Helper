@@ -5,7 +5,7 @@ A simple light tool for codeforces pracice.
 
 ## 使用方法
 
-前往 release 页面下载最新版，放置于任何目录下，并在同级目录新建 _users 文件夹即可使用。
+前往 release 页面下载最新版，放置于任何目录下即可使用。
 
 其余操作请见命令行。
 
