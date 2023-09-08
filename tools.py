@@ -176,7 +176,7 @@ def fetch_profile(codeforces_user_handle:str):
     profile_json = f"./_users/profile_{codeforces_user_handle}" \
                         + "_generated.json"
     request_url = "https://codeforces.com/api/user.status?" \
-          + "handle={codeforces_user_handle}&count=10000"
+          + f"handle={codeforces_user_handle}&count=10000"
     user_profile_json = requests.get(request_url,timeout=10).json()
     lis = []
     for profile in user_profile_json['result']:
