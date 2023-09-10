@@ -40,7 +40,8 @@ parser.add_argument("--ignore-labels",
     "expression parsing",
     "2-sat",
     "ternary search",
-    "schedules"
+    "schedules",
+    "two pointers"
 ])
 parser.add_argument("--max-rating-delta",
                     help="specify the maximum rating delta for one submission",
@@ -53,6 +54,7 @@ parser.add_argument("--max-wrong-attempt",
 group = parser.add_mutually_exclusive_group(required=True)
 
 group.add_argument("--show",help="show user's rating graph in command line",action='store_true')
+group.add_argument("--show-all",help="show user's rating graph in command line,including uncalculated part.",action='store_true')
 group.add_argument("--recent",help="show user's recent status",type=int)
 group.add_argument("--predict",help="predict user's perfomance in a single problem",type=str)
 group.add_argument("--predict-contest",help="predict user's perfomance in a contest",type=int)
@@ -62,6 +64,10 @@ group.add_argument("--suggest",
                    type=float,nargs=3)
 group.add_argument("--suggest-show",help="suggest some problem in a range of \
                    accept probability and show tags of them",type=float,nargs=3)
+group.add_argument("--suggest-contest",help="suggest some contest in a range of \
+                   accept number probability.",type=float,nargs=3)
+group.add_argument("--suggest-contest-show",help="suggest some contest in a range of \
+                   accept number probability and show tags of them",type=float,nargs=3)
 group.add_argument("--fetch",help="fetch the submissions from the user",action='store_true')
 
 arg = parser.parse_args()
@@ -211,7 +217,7 @@ def fetch_profile(codeforces_user_handle:str):
             }))
     print(f'total {len(user_profile_json["result"])}')
 
-def print_ratings(colored = True,color_delta = False):
+def print_ratings(colored = True,color_delta = False,show_all = False):
     """
     图形化地输出 rating 并排行
     """
@@ -228,6 +234,9 @@ def print_ratings(colored = True,color_delta = False):
             rating_sum += rating[1][0]
             num += rating[1][1]
             cnt_valid += 1
+        else:
+            if not show_all:
+                continue
 
         control = ''
         clear = ''
@@ -292,9 +301,12 @@ def print_predict_problem(problemid:str) -> None:
             + f' is {get_col_from_rating(problems[problemid]["rating"])}' \
             + f'{str(round(problems[problemid]["rating"],1)):5}{clear}' \
             + f', your accepted rate is {str(round(win_rate(problemid)*100,1)):4}% (',end='')
-    for problem in problems[problemid]['tags']:
-        if not problem in ignored_labels:
-            print(f' {get_col_from_rating(ratings.get(problem,(arg.initial_rating,0))[0])}{problem} {round(predict(ratings.get(problem,(arg.initial_rating,0))[0],problems[problemid]["rating"]),1)*100:3.2f}%{clear} ',end='')
+    for tag in problems[problemid]['tags']:
+        if not tag in ignored_labels:
+            if ratings.get(tag,(0,0))[0] == 0:
+                print(f' {tag} ',end='')
+            else:
+                print(f' {get_col_from_rating(ratings.get(tag,(arg.initial_rating,0))[0])}{tag} {round(predict(ratings.get(tag,(arg.initial_rating,0))[0],problems[problemid]["rating"]),1)*100:3.2f}%{clear} ',end='')
     print(')')
     if accepted.get(problemid,False):
         print('You have '+Fore.GREEN+'Accepted'+Style.RESET_ALL+' this problem.')
@@ -308,7 +320,7 @@ def suggest_problem(win_rate_min:float,win_rate_max:float,\
     用limit限制数量，show_more控制是否显示详细信息
     """
     print(f"suggest these problem for you (accept prob between "\
-          + "{win_rate_min*100:3.2f}% and {win_rate_max*100:3.2f}%)")
+          + f"{win_rate_min*100:3.2f}% and {win_rate_max*100:3.2f}%)")
     cnt = 0
     for i in problems:
         if i in problem_submited:
@@ -415,16 +427,45 @@ def show_recent_status(limit:int=None):
         if limit is not None and index+1 >= limit:
             return
 
+with open("contest.json",encoding="utf-8") as read_stream:
+    contest_data = json.loads(read_stream.read())
+
+def print_predict_contest(contestId:str)->None:
+    for k in contest_data[str(contestId)]:
+        print_predict_problem(k)
+
+def suggest_contest(accept_num_min:float,accept_num_max:float,\
+                    limit:int=None,show_more:bool=False) -> None:
+    tot = 0
+    for k in contest_data.keys():
+        cnt = 0
+        for c in contest_data[k]:
+            if accepted.get(c,None) != None:
+                cnt = -10000
+            cnt += win_rate(c)
+        if accept_num_min <= cnt and cnt <= accept_num_max:
+            print(f"suggest contest {k} for you,you can accept {round(cnt,1)} problems.")
+            if show_more:
+                print_predict_contest(k)
+                print("")
+            tot+=1
+            if limit is not None and tot >= limit:
+                return
+
+    # print(accept_num_min,accept_num_max,limit)
+        
+    
+
 if not arg.fetch:
     welcome_message()
 if arg.show:
-    print_ratings()
+    print_ratings(True,False,False)
+if arg.show_all:
+    print_ratings(True,False,True)
 if arg.predict:
     print_predict_problem(arg.predict)
 if arg.predict_contest:
-    with open("contest.json",encoding="utf-8") as read_stream:
-        for k in json.loads(read_stream.read())[str(arg.predict_contest)]:
-            print_predict_problem(k)
+    print_predict_contest(arg.predict_contest)
 if arg.recent:
     show_recent_status(arg.recent)
 if arg.suggest:
@@ -433,3 +474,7 @@ if arg.suggest_show:
     suggest_problem(arg.suggest_show[0],arg.suggest_show[1],arg.suggest_show[2],True)
 if arg.fetch:
     fetch_profile(arg.handle)
+if arg.suggest_contest:
+    suggest_contest(arg.suggest_contest[0],arg.suggest_contest[1],arg.suggest_contest[2])
+if arg.suggest_contest_show:
+    suggest_contest(arg.suggest_contest_show[0],arg.suggest_contest_show[1],arg.suggest_contest_show[2],True)
