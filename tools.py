@@ -168,7 +168,7 @@ def fetch_problem():
     for result in res['result']['problems']:
         try:
             if result['type'] == 'PROGRAMMING' and \
-                not 'interactive' in result['tags'] and not '*special' in result['tags']:
+                not '*special' in result['tags']:
                 proceed[str(result['contestId'])+result['index']] = {
                         'rating' : result['rating'],
                         'tags'   : result['tags'],
