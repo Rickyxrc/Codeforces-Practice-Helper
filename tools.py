@@ -22,7 +22,7 @@ except FileExistsError:
 
 parser = argparse.ArgumentParser(description=
                                  f"Codeforces Practice Helper -\
-                                      by {Fore.GREEN}rickyxrc{Style.RESET_ALL}"
+                                      by {Fore.CYAN}rickyxrc{Style.RESET_ALL}"
                                  ,prog='helper.py')
 
 parser.add_argument("--handle",help="specify user's handle"
@@ -56,6 +56,7 @@ group = parser.add_mutually_exclusive_group(required=True)
 group.add_argument("--show",help="show user's rating graph in command line",action='store_true')
 group.add_argument("--show-all",help="show user's rating graph in command line,including uncalculated part.",action='store_true')
 group.add_argument("--recent",help="show user's recent status",type=int)
+group.add_argument("--show-delta",help="show user's rating delta",action='store_true')
 group.add_argument("--predict",help="predict user's perfomance in a single problem",type=str)
 group.add_argument("--predict-contest",help="predict user's perfomance in a contest",type=int)
 group.add_argument("--suggest",
@@ -108,6 +109,22 @@ def update(now_rating:float,problem_rating:float,result:bool) -> float:
     global max_rating_delta
     return now_rating + max_rating_delta * (result - predict(now_rating,problem_rating))
 
+def get_col_from_rating(rating:float) -> str:
+    """显示 rating 颜色"""
+    if rating < 1200:
+        return Fore.LIGHTBLACK_EX
+    if rating < 1400:
+        return Fore.GREEN
+    if rating < 1600:
+        return Fore.CYAN
+    if rating < 1900:
+        return Fore.BLUE
+    if rating < 2100:
+        return Fore.MAGENTA
+    if rating < 2400:
+        return Fore.YELLOW
+    return Fore.LIGHTRED_EX
+
 def update_tuple(now:tuple,problem_rating:float,result:bool) -> tuple:
     """
     用 tuple 的格式更新
@@ -127,7 +144,17 @@ def update_tag(problem_id:str,tag:str,result:bool) -> float:
     except KeyError:
         print('problem '+problem_id+'don\'t have rating judged,ignored.')
         return
-    ratings[tag] = update_tuple(ratings.get(tag,(initial_rating,0)),problem_rating,result)
+    new_ratings = update_tuple(ratings.get(tag,(initial_rating,0)),problem_rating,result)
+
+    if arg.show_delta:
+        delta = round(new_ratings[0]-ratings.get(tag,(initial_rating,(0,0)))[0],1)
+        if delta>0:
+            prev_str = f"{Fore.GREEN}+"
+        else:
+            prev_str = f"{Fore.RED}"
+        print(f"{get_col_from_rating(ratings.get(tag,(initial_rating,(0,0)))[0])}{tag:30}{Style.RESET_ALL}{prev_str}{delta}{Style.RESET_ALL}")
+
+    ratings[tag] = new_ratings
 
 def display_line(length:int,process:float)->str:
     """显示一行"""
@@ -140,21 +167,6 @@ def display(rating:float)->str:
     """显示进度条"""
     return '['+display_line(100,rating/4000)+']'
 
-def get_col_from_rating(rating:float) -> str:
-    """显示 rating 颜色"""
-    if rating < 1200:
-        return Fore.LIGHTBLACK_EX
-    if rating < 1400:
-        return Fore.GREEN
-    if rating < 1600:
-        return Fore.CYAN
-    if rating < 1900:
-        return Fore.BLUE
-    if rating < 2100:
-        return Fore.MAGENTA
-    if rating < 2400:
-        return Fore.YELLOW
-    return Fore.LIGHTRED_EX
 
 def fetch_problem():
     """从 Codeforces 拉取处理题目信息"""
@@ -294,7 +306,7 @@ def win_rate(problem_id):
     return math.pow(ans,1/cnt)
 
 
-def print_predict_problem(problemid:str) -> None:
+def print_predict_problem(problemid:str,output_tried:bool) -> None:
     """输出题目的通过率"""
     clear = Style.RESET_ALL
     print(f'rating of problem {get_col_from_rating(problems[problemid]["rating"])}{problemid:6}{clear}' \
@@ -308,10 +320,12 @@ def print_predict_problem(problemid:str) -> None:
             else:
                 print(f' {get_col_from_rating(ratings.get(tag,(arg.initial_rating,0))[0])}{tag} {round(predict(ratings.get(tag,(arg.initial_rating,0))[0],problems[problemid]["rating"]),1)*100:3.2f}%{clear} ',end='')
     print(')')
-    if accepted.get(problemid,False):
-        print('You have '+Fore.GREEN+'Accepted'+Style.RESET_ALL+' this problem.')
-    elif tried.get(problemid,False):
-        print('You have '+Fore.GREEN+'Tried'+Style.RESET_ALL+' this problem.')
+
+    if output_tried:
+        if accepted.get(problemid,False):
+            print('You have '+Fore.GREEN+'Accepted'+Style.RESET_ALL+' this problem.')
+        elif tried.get(problemid,False):
+            print('You have '+Fore.RED+'Tried'+Style.RESET_ALL+' this problem.')
 
 def suggest_problem(win_rate_min:float,win_rate_max:float,\
                     limit:int=None,show_more:bool=False) -> None:
@@ -330,7 +344,7 @@ def suggest_problem(win_rate_min:float,win_rate_max:float,\
             if not show_more:
                 print(f"{i:6} {rate*100:3.2f}%")
             else:
-                print_predict_problem(i)
+                print_predict_problem(i,True)
             cnt+=1
             if limit is not None and cnt == limit:
                 break
@@ -376,6 +390,9 @@ if not arg.fetch:
 
         if accepted.get(record['problemId'],None) is None or\
               (not record['beat'] and tried.get(record['problemId'],0) > max_wrong_attempt):
+
+            if arg.show_delta:
+                print_predict_problem(record['problemId'],False)
 
             for single_tag in problem_tag:
                 if single_tag in ignored_labels:
@@ -432,7 +449,7 @@ with open("contest.json",encoding="utf-8") as read_stream:
 
 def print_predict_contest(contestId:str)->None:
     for k in contest_data[str(contestId)]:
-        print_predict_problem(k)
+        print_predict_problem(k,True)
 
 def suggest_contest(accept_num_min:float,accept_num_max:float,\
                     limit:int=None,show_more:bool=False) -> None:
@@ -460,10 +477,10 @@ if not arg.fetch:
     welcome_message()
 if arg.show:
     print_ratings(True,False,False)
-if arg.show_all:
+if arg.show_all or arg.show_delta:
     print_ratings(True,False,True)
 if arg.predict:
-    print_predict_problem(arg.predict)
+    print_predict_problem(arg.predict,True)
 if arg.predict_contest:
     print_predict_contest(arg.predict_contest)
 if arg.recent:
