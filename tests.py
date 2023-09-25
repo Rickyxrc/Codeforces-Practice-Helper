@@ -21,7 +21,8 @@ class TestCodeforcesPractice:
     def test_problem_predict(arg):
         s = os.popen('python ./tools.py --handle test_user_only --predict 1A').read()
         assert('Welcome' in s)
-        assert('5.2' in s)
+        assert('77.6' in s)
+        assert('80.0' in s)
         assert('1000' in s)
         assert('Accepted' in s)
         # assert(s=='Welcome,user test_user_only.\nrating of problem \x1b[30m1A    \x1b[0m is \x1b[30m1000 \x1b[0m, your accepted rate is 77.6 % ( \x1b[30mmath 10.00%\x1b[0m )\nYou have \x1b[32mAccepted\x1b[0m this problem.\n')
