@@ -45,11 +45,11 @@ parser.add_argument("--ignore-labels",
 ])
 parser.add_argument("--max-rating-delta",
                     help="specify the maximum rating delta for one submission",
-                    required=False,type=float,default=200)
+                    required=False,type=float,default=64)
 parser.add_argument("--initial-rating",
-                    help="specify the initial rating",required=False,type=int,default=300)
+                    help="specify the initial rating",required=False,type=int,default=1200)
 parser.add_argument("--max-wrong-attempt",
-                    help="specify fetch the max wrong attempt",required=False,type=int,default=5)
+                    help="specify fetch the max wrong attempt",required=False,type=int,default=3)
 
 group = parser.add_mutually_exclusive_group(required=True)
 
@@ -206,9 +206,9 @@ def fetch_profile(codeforces_user_handle:str):
     user_profile_json = requests.get(request_url,timeout=10).json()
     lis = []
     for profile in user_profile_json['result']:
-        if profile['verdict'] == 'TESTING':
-            print('ignored testing submission',profile)
         try:
+            if profile['verdict'] == 'TESTING':
+                print('ignored testing submission',profile)
             if profile['passedTestCount'] == 0:
                 continue
             res = {
@@ -387,9 +387,9 @@ if not arg.fetch:
             problem_tag = problem_object['tags']
         except KeyError:
             continue
-
-        if accepted.get(record['problemId'],None) is None or\
-              (not record['beat'] and tried.get(record['problemId'],0) > max_wrong_attempt):
+        
+        if (accepted.get(record['problemId'],None) is None) and\
+              (((not record['beat']) and (tried.get(record['problemId'],0) < max_wrong_attempt)) or (record['beat'])):
 
             if arg.show_delta:
                 print_predict_problem(record['problemId'],False)
